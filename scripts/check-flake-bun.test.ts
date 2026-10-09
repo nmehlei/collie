@@ -122,6 +122,8 @@ describe("the Windows check runs the flake's Bun", () => {
     if (declared === null) {
       throw new Error("flake.nix no longer pins nixpkgs-darwin-x64 by a 40-character revision — this test reads that line");
     }
+    // SAFETY: the shape is asserted, not trusted — every step to `rev` is optional, so a lock that
+    // does not have it reads as `undefined` and fails the comparison below rather than throwing.
     const lock = JSON.parse(readFileSync(join(ROOT, "flake.lock"), "utf8")) as {
       nodes: { "nixpkgs-darwin-x64"?: { locked?: { rev?: string } } };
     };

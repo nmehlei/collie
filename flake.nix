@@ -6,8 +6,19 @@
   # bumped in a feature commit means the binary a bisect builds is not the binary the release built.
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/c043004d1c6985732bcc1cbc5a9c9aecbbb4e0f0";
 
+  # Intel Macs only. The revision above is from after nixpkgs 26.11 dropped `x86_64-darwin`, so
+  # `legacyPackages.x86_64-darwin` throws there. The 26.05 darwin branch still supports it and gets
+  # security fixes until the end of 2026; when it stops, the `macos-x64` release row has to move to
+  # another toolchain or be dropped. Every other system keeps the input above, byte for byte.
+  # Pinned by revision for the same reason; the pair is recorded in `flake.lock`.
+  inputs.nixpkgs-darwin-x64.url = "github:NixOS/nixpkgs/55afc4c3adc7194df3b96d43b7d18bf8131bfcfa";
+
   outputs =
-    { self, nixpkgs }:
+    {
+      self,
+      nixpkgs,
+      nixpkgs-darwin-x64,
+    }:
     let
       # The shipped release targets, and nothing else. `.github/workflows/release.yml`'s `payload`
       # matrix is the list this mirrors.
@@ -61,7 +72,9 @@
           }
         );
 
-      forEachSystem = f: nixpkgs.lib.genAttrs systems (system: f nixpkgs.legacyPackages.${system});
+      pkgsFor = system: (if system == "x86_64-darwin" then nixpkgs-darwin-x64 else nixpkgs).legacyPackages.${system};
+
+      forEachSystem = f: nixpkgs.lib.genAttrs systems (system: f (pkgsFor system));
     in
     {
       # `packages.<system>.collie` is Collie itself, and it WRAPS the release tarball rather than

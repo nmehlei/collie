@@ -113,4 +113,18 @@ describe("the Windows check runs the flake's Bun", () => {
     expect(script).not.toContain("[int]$MaxSkips = ");
     expect(script).toContain("if ($skip -gt $skipBudget[$name])");
   });
+
+  test("the Intel Mac nixpkgs revision in flake.nix is the one flake.lock recorded", () => {
+    // Same pin-written-twice rule as above, for the input only `x86_64-darwin` uses.
+    const declared = /inputs\.nixpkgs-darwin-x64\.url = "github:NixOS\/nixpkgs\/([0-9a-f]{40})";/.exec(
+      readFileSync(join(ROOT, "flake.nix"), "utf8"),
+    );
+    if (declared === null) {
+      throw new Error("flake.nix no longer pins nixpkgs-darwin-x64 by a 40-character revision — this test reads that line");
+    }
+    const lock = JSON.parse(readFileSync(join(ROOT, "flake.lock"), "utf8")) as {
+      nodes: { "nixpkgs-darwin-x64"?: { locked?: { rev?: string } } };
+    };
+    expect(lock.nodes["nixpkgs-darwin-x64"]?.locked?.rev).toBe(declared[1]!);
+  });
 });

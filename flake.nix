@@ -9,13 +9,13 @@
   outputs =
     { self, nixpkgs }:
     let
-      # The three shipped release targets, and nothing else. `.github/workflows/release.yml`'s
-      # `payload` matrix is the list this mirrors; a fourth row there is commented out and stays out
-      # here too.
+      # The shipped release targets, and nothing else. `.github/workflows/release.yml`'s `payload`
+      # matrix is the list this mirrors.
       systems = [
         "x86_64-linux"
         "aarch64-linux"
         "aarch64-darwin"
+        "x86_64-darwin"
       ];
 
       # The pinned Bun. It must be at least `MIN_BUN` in cli/update-check.ts — the two are one fact
@@ -43,6 +43,10 @@
                 "aarch64-darwin" = pkgs.fetchurl {
                   url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-aarch64.zip";
                   hash = "sha256-2Jc86DX6eGflzHmv7m/G8a4BF6pL1fwlRv0AxRL3E4Y=";
+                };
+                "x86_64-darwin" = pkgs.fetchurl {
+                  url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-darwin-x64-baseline.zip";
+                  hash = "sha256-SY521hu+h9Iwb2X+1groa2sMjuLacJ+DICgI2xoJ5Ac=";
                 };
                 "aarch64-linux" = pkgs.fetchurl {
                   url = "https://github.com/oven-sh/bun/releases/download/bun-v${finalAttrs.version}/bun-linux-aarch64.zip";

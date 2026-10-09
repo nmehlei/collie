@@ -150,18 +150,6 @@ jobs:
       # aarch64, macOS aarch64 and macOS x86_64 — and it turns flakes on out of the box.
       - uses: DeterminateSystems/nix-installer-action@v22
 
-      # `nix develop` takes its own bash from the REGISTRY's `nixpkgs`, not from the flake's inputs.
-      # On Intel that entry resolves to a nixpkgs that has dropped `x86_64-darwin`, the lookup throws,
-      # and the shell falls back to macOS's bash 3.2, which cannot parse the devshell script. Point
-      # the registry at the revision `flake.lock` already pins for this system.
-      - name: Point the nixpkgs registry entry at the Intel Mac revision
-        if: matrix.platform == 'macos-x64'
-        run: |
-          set -eu
-          rev="$(jq -r '.nodes["nixpkgs-darwin-x64"].locked.rev' flake.lock)"
-          [ ${#rev} -eq 40 ] || { echo "flake.lock has no nixpkgs-darwin-x64 revision" >&2; exit 1; }
-          nix registry add nixpkgs "github:NixOS/nixpkgs/$rev"
-
       - name: Build the payload
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -226,7 +214,18 @@ jobs:
           chmod 0755 "$stage/scripts/collie-ctl.sh"
 
           PAYLOAD
-          nix develop --command bash "$RUNNER_TEMP/build-payload.sh"
+          # `nix develop` takes its own bash from the flake's `nixpkgs` INPUT. On Intel that input is a
+          # nixpkgs that has dropped `x86_64-darwin`, the lookup throws (logged as "error (ignored)"),
+          # and the shell falls back to macOS's bash 3.2, which cannot parse the devshell script. For
+          # this one row, hand it the revision `flake.lock` already pins as `nixpkgs-darwin-x64`.
+          # `${develop_args[@]+...}` because the runner's bash 3.2 treats an empty array as unset.
+          develop_args=()
+          if [ "$PLATFORM" = "macos-x64" ]; then
+            rev="$(jq -r '.nodes["nixpkgs-darwin-x64"].locked.rev' flake.lock)"
+            [ "${#rev}" -eq 40 ] || { echo "flake.lock has no nixpkgs-darwin-x64 revision" >&2; exit 1; }
+            develop_args=(--override-input nixpkgs "github:NixOS/nixpkgs/$rev" --no-write-lock-file)
+          fi
+          nix develop ${develop_args[@]+"${develop_args[@]}"} --command bash "$RUNNER_TEMP/build-payload.sh"
 
       # OUTSIDE `nix develop`, and that is the whole point of it being its own step. Everything
       # above ran inside the flake, and the bun derivation's own install check runs inside Nix too,

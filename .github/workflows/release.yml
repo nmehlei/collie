@@ -150,6 +150,18 @@ jobs:
       # aarch64, macOS aarch64 and macOS x86_64 — and it turns flakes on out of the box.
       - uses: DeterminateSystems/nix-installer-action@v22
 
+      # `nix develop` takes its own bash from the REGISTRY's `nixpkgs`, not from the flake's inputs.
+      # On Intel that entry resolves to a nixpkgs that has dropped `x86_64-darwin`, the lookup throws,
+      # and the shell falls back to macOS's bash 3.2, which cannot parse the devshell script. Point
+      # the registry at the revision `flake.lock` already pins for this system.
+      - name: Point the nixpkgs registry entry at the Intel Mac revision
+        if: matrix.platform == 'macos-x64'
+        run: |
+          set -eu
+          rev="$(jq -r '.nodes["nixpkgs-darwin-x64"].locked.rev' flake.lock)"
+          [ ${#rev} -eq 40 ] || { echo "flake.lock has no nixpkgs-darwin-x64 revision" >&2; exit 1; }
+          nix registry add nixpkgs "github:NixOS/nixpkgs/$rev"
+
       - name: Build the payload
         env:
           PLATFORM: ${{ matrix.platform }}

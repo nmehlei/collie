@@ -1,6 +1,6 @@
 {
   "name": "collie-web",
-  "version": "1.19.2",
+  "version": "1.19.2-x64.cross2",
   "private": true,
   "license": "MIT",
   "type": "module",

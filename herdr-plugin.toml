@@ -1,6 +1,6 @@
 id = "herdr.collie"
 name = "Collie"
-version = "1.19.2"
+version = "1.19.2-x64.cross2"
 min_herdr_version = "0.7.0"
 description = "Mobile web UI to monitor and reply to your agent herd, served over Tailscale"
 platforms = ["linux", "macos"]

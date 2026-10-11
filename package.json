@@ -1,6 +1,6 @@
 {
   "name": "collie",
-  "version": "1.19.2",
+  "version": "1.19.2-x64.cross2",
   "private": true,
   "license": "MIT",
   "description": "Collie — a mobile web UI to monitor and reply to the AI agents in your terminal, over Tailscale",

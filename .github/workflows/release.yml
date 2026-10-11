@@ -137,9 +137,9 @@ jobs:
           - platform: linux-arm64
             runs-on: ubuntu-24.04-arm
             bun-target: bun-linux-arm64
-          # - platform: macos-x64
-          #   runs-on: macos-13
-          #   bun-target: bun-darwin-x64
+          - platform: macos-x64
+            runs-on: macos-14
+            bun-target: bun-darwin-x64-baseline
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
@@ -147,6 +147,13 @@ jobs:
       # This installer is the one that covers all three shipped runners — Linux x86_64, Linux
       # aarch64 and macOS aarch64 — and it turns flakes on out of the box.
       - uses: DeterminateSystems/nix-installer-action@v22
+
+      # The macos-x64 payload is CROSS-compiled on this arm64 runner, and the sealing step below
+      # runs the result (`collie version`, `docs crew`), which an x86_64 binary can only do under
+      # Rosetta.
+      - name: Install Rosetta
+        if: matrix.platform == 'macos-x64'
+        run: softwareupdate --install-rosetta --agree-to-license
 
       - name: Build the payload
         env:
